@@ -3,20 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PFE IS HERE</title>
+    <title>PFE Interactive Guide</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        @keyframes thumb-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1.25); }
+        }
         body {
             font-family: 'Inter', sans-serif;
+            overflow: hidden; 
         }
         .container {
-            min-height: 100vh;
+            height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .section {
-            display: none;
+            width: 100%;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.98);
+            pointer-events: none;
+            backface-visibility: hidden;
+        }
+        .section.active {
+            opacity: 1;
+            transform: scale(1);
+            position: relative;
+            pointer-events: auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem;
+            max-height: 100%;
+        }
+        .section-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+        /* NEW UTILITY CLASS: Makes an element invisible but keeps its space in the layout */
+        .invisible {
+            visibility: hidden;
         }
         #quoteText {
             opacity: 0;
@@ -24,7 +63,7 @@
         }
         .message-box {
             position: fixed;
-            bottom: 20px;
+            bottom: -100px;
             left: 50%;
             transform: translateX(-50%);
             max-width: 500px;
@@ -35,605 +74,420 @@
             padding: 20px 40px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none;
+            transition: bottom 0.5s ease-in-out;
             border-radius: 1rem;
         }
+        .message-box.show {
+            bottom: 20px;
+        }
         .is-checked {
-            transform: scale(1.2);
-            transition: transform 0.2s ease-in-out;
-        }
-        #thumbsUpContainer .is-checked {
+            animation: thumb-pop 0.3s ease-out forwards;
             color: #10B981;
         }
-        #thumbsUpContainer2 .is-checked {
-            color: #10B981;
-        }
-        .relative-container {
+        #casaImageContainer {
             position: relative;
-            display: inline-block;
+            display: flex;
+            justify-content: center;
         }
-        #thumbsUpContainer {
+        #thumbsContainer {
             position: absolute;
-            bottom: 57px; /* Adjust as needed */
-            left: 57%;
-            transform: translateX(-50%);
-            z-index: 5;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
-        #thumbsUpContainer2 {
+        .thumb-label {
             position: absolute;
-            bottom: 88.5px; /* Adjust as needed */
-            left: 57%;
-            transform: translateX(-50%);
-            z-index: 5;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+        #progressBar {
+            padding-bottom: 1rem;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #3b82f6;
+            border-radius: 9999px;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+        }
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .progress-step {
+            transition: color 0.5s ease-in-out;
+        }
+        .progress-step.completed {
+            color: #1f2937;
+            font-weight: 500;
         }
     </style>
 </head>
 <body class="bg-slate-100 flex items-center justify-center p-6">
-    <div class="container bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full flex flex-col items-center justify-center text-center">
-        
-        <div id="mainPageContent">
-            <h1 class="text-5xl font-bold text-blue-700 mb-4">Purefiber East is here!</h1>
-            <div id="quoteContainer" class="h-16 flex items-center justify-center mb-2">
-                <p id="quoteText" class="text-xl italic text-slate-500"></p>
+    <div class="container bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full">
+        <div id="progressBar" class="hidden">
+            <div class="progress-bar-container">
+                <div id="progressBarFill" class="progress-bar"></div>
             </div>
-            <h1 class="text-4xl font-bold text-slate-800 mb-6" id="mainTitle">Choose a Province</h1>
-            <div id="provinceSelection" class="flex justify-center space-x-4 mb-8">
-                <button id="ontarioBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Ontario
-                </button>
-                <button id="quebecBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Quebec
-                </button>
+            <div id="progressSteps" class="progress-steps">
+                <span class="progress-step" id="step-1">Province</span>
+                <span class="progress-step" id="step-2">Qualify</span>
+                <span class="progress-step" id="step-3">Benefits</span>
+                <span class="progress-step" id="step-4">Offers</span>
+                <span class="progress-step" id="step-5">Summary</span>
             </div>
         </div>
 
-        <div id="intermediateOptionSection" class="section w-full p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
-            <h2 class="text-3xl font-semibold text-slate-700 mb-4">Qualify your customer</h2>
-            <div id="quebecNonIlecContainer" class="flex justify-center items-center space-x-4 mb-6 hidden">
-                <label class="flex items-center text-lg text-blue-600 cursor-pointer">
-                    <input type="checkbox" id="quebecNonIlecCheckbox" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">Non-Ilec Customer</span>
-                </label>
+        <div class="section-container">
+            <div id="mainPage" class="section active text-center">
+                <h1 class="text-5xl font-bold text-blue-700 mb-4">Purefiber East is here!</h1>
+                <div class="h-16 flex items-center justify-center mb-2">
+                    <p id="quoteText" class="text-xl italic text-slate-500"></p>
+                </div>
+                <h2 class="text-4xl font-bold text-slate-800 mb-6">Choose a Province</h2>
+                <div class="flex justify-center space-x-4 mb-8">
+                    <button data-province="ontario" class="province-btn bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">Ontario</button>
+                    <button data-province="quebec" class="province-btn bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">Quebec</button>
+                </div>
             </div>
-            <div class="flex justify-center items-center space-x-4 mb-6">
-                <label class="flex items-center text-lg text-blue-600 cursor-pointer">
-                    <input type="checkbox" id="intermediateOptionCheckbox" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">Offer is available on casa</span>
-                </label>
-            </div>
-            <div id="casaImageContainer" class="mt-4 mb-6 flex justify-center hidden relative-container">
-                <img src="https://github.com/modexperimental/Pfe/blob/main/new%20prfe.jpg?raw=true" alt="Placeholder image for Casa offer" class="rounded-lg shadow-md w-[557px] h-[656px]">
-                <div id="thumbsContainer" class="hidden">
-                    <label class="flex items-center text-2xl cursor-pointer" id="thumbsUpContainer">
-                        <input type="checkbox" id="thumbsUpCheckbox" class="form-checkbox h-8 w-8 text-green-500 rounded focus:ring-green-400 opacity-0 absolute">
-                        <span class="ml-2">&#x1f44d;</span>
-                    </label>
-                    <label class="flex items-center text-2xl cursor-pointer" id="thumbsUpContainer2">
-                        <input type="checkbox" id="thumbsUpCheckbox2" class="form-checkbox h-8 w-8 text-green-500 rounded focus:ring-green-400 opacity-0 absolute">
-                        <span class="ml-2">&#x1f44d;</span>
+
+            <div id="qualifyPage" class="section text-center">
+                <h2 class="text-3xl font-semibold text-slate-700 mb-4 shrink-0">Qualify your customer</h2>
+                <div id="quebecNonIlecContainer" class="flex justify-center items-center space-x-4 mb-6 shrink-0">
+                    <label class="flex items-center text-lg text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="quebecNonIlecCheckbox" class="form-checkbox h-6 w-6 text-indigo-600 rounded">
+                        <span class="ml-2">Non-Ilec Customer</span>
                     </label>
                 </div>
-            </div>
-            <div class="flex space-x-4 justify-center">
-                <button id="intermediateBackBtn" class="bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Back
-                </button>
-                <button id="nextBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Next
-                </button>
-            </div>
-        </div>
-
-        <div id="securityQuotesSection" class="section w-full p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
-            <h2 class="text-3xl font-semibold text-slate-700 mb-4">Position Yourself with The Benefits of Purefiber and Wifi+</h2>
-            <div id="securityQuoteContainer" class="flex items-center justify-center mb-4">
-                <button id="securityPrevBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors mr-4">&lt;</button>
-                <p id="securityQuoteText" class="text-xl italic text-slate-500 min-h-[100px] flex items-center justify-center"></p>
-                <button id="securityNextBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors ml-4">&gt;</button>
-            </div>
-            <div class="flex space-x-4 justify-center">
-                <button id="securityBackBtn" class="bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Back
-                </button>
-                <button id="securityNextBtn2" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105">
-                    Next
-                </button>
-            </div>
-        </div>
-        
-        <div id="ontarioSection" class="section w-full p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
-            <h2 class="text-3xl font-semibold text-slate-700 mb-4">Live transfer the customer to "Offnet Sales" and fill the lead form on FLP:</h2>
-            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 mb-6">
-                <label class="flex items-center text-lg text-slate-600 cursor-pointer">
-                    <input type="checkbox" id="ontarioOption1" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">PureFiber</span>
-                </label>
-                <label class="flex items-center text-lg text-slate-600 cursor-pointer">
-                    <input type="checkbox" id="ontarioOption2" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">Wifi+</span>
-                </label>
-            </div>
-            <div id="ontarioCarousel" class="mt-4 w-full flex flex-col items-center hidden">
-                <div class="flex items-center justify-center w-full">
-                    
-                    <img id="ontarioImage" src="" alt="Ontario Image" class="rounded-lg shadow-md w-full h-auto max-w-lg transition-opacity duration-300">
-                    <button id="ontarioNext" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors ml-4">&gt;</button>
+                <div class="flex justify-center items-center space-x-4 mb-6 shrink-0">
+                    <label class="flex items-center text-lg text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="casaAvailableCheckbox" class="form-checkbox h-6 w-6 text-indigo-600 rounded">
+                        <span class="ml-2">Offer is available on casa</span>
+                    </label>
                 </div>
-                <button id="ontarioDoneBtn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 hidden">DONE</button>
-            </div>
-            <button id="ontarioBackBtn" class="bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 mt-4">
-                Back
-            </button>
-        </div>
-
-        <div id="quebecSection" class="section w-full p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
-            <h2 class="text-3xl font-semibold text-slate-700 mb-4">Live Transfer to "Offnet Sales" on WWE then submit your lead on FLP</h2>
-            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 mb-6">
-                <label class="flex items-center text-lg text-slate-600 cursor-pointer">
-                    <input type="checkbox" id="quebecOption1" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">PureFiber</span>
-                </label>
-                <label class="flex items-center text-lg text-slate-600 cursor-pointer">
-                    <input type="checkbox" id="quebecOption2" class="form-checkbox h-6 w-6 text-indigo-600 rounded focus:ring-indigo-500">
-                    <span class="ml-2">Wifi+</span>
-                </label>
-            </div>
-            <div id="quebecCarousel" class="mt-4 w-full flex flex-col items-center hidden">
-                <div class="flex items-center justify-center w-full">
-                    
-                    <img id="quebecImage" src="" alt="Quebec Image" class="rounded-lg shadow-md w-full h-auto max-w-lg transition-opacity duration-300">
-                    <button id="quebecNext" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors ml-4">&gt;</button>
+                <div id="casaImageContainer" class="mt-4 mb-6">
+                    <img src="https://github.com/modexperimental/Pfe/blob/main/new%20prfe.jpg?raw=true" alt="Casa offer details" class="rounded-lg shadow-md w-[415px] h-[500px]">
+                    <div id="thumbsContainer">
+                        <label class="thumb-label" id="thumbsUpContainer">
+                            <input type="checkbox" id="thumbsUpCheckbox" class="opacity-0 absolute">
+                            <span id="thumbIcon1"></span>
+                        </label>
+                        <label class="thumb-label" id="thumbsUpContainer2">
+                            <input type="checkbox" id="thumbsUpCheckbox2" class="opacity-0 absolute">
+                            <span id="thumbIcon2"></span>
+                        </label>
+                    </div>
                 </div>
-                <button id="quebecDoneBtn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 hidden">DONE</button>
+                <div class="flex space-x-4 justify-center mt-6 shrink-0">
+                    <button class="back-btn bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full">Back</button>
+                    <button id="qualifyNextBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full">Next</button>
+                </div>
             </div>
-            <button id="quebecBackBtn" class="bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 mt-4">
-                Back
-            </button>
+
+            <div id="benefitsPage" class="section text-center">
+                <h2 class="text-3xl font-semibold text-slate-700 mb-4">Position with Benefits</h2>
+                <div class="flex items-center justify-center mb-4">
+                    <button id="securityPrevBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors mr-4">&lt;</button>
+                    <p id="securityQuoteText" class="text-xl italic text-slate-600 min-h-[100px] flex items-center justify-center max-w-lg"></p>
+                    <button id="securityNextBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors ml-4">&gt;</button>
+                </div>
+                <div class="flex space-x-4 justify-center mt-6">
+                    <button class="back-btn bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full">Back</button>
+                    <button id="benefitsNextBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full">Next</button>
+                </div>
+            </div>
+
+            <div id="offersPage" class="section text-center">
+                <h2 id="offersTitle" class="text-3xl font-semibold text-slate-700 mb-4"></h2>
+                <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 mb-6">
+                    <label class="flex items-center text-lg text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="offerPureFiber" class="offer-checkbox form-checkbox h-6 w-6 text-indigo-600 rounded">
+                        <span class="ml-2">PureFiber</span>
+                    </label>
+                    <label class="flex items-center text-lg text-slate-600 cursor-pointer">
+                        <input type="checkbox" id="offerWifiPlus" class="offer-checkbox form-checkbox h-6 w-6 text-indigo-600 rounded">
+                        <span class="ml-2">Wifi+</span>
+                    </label>
+                </div>
+                <div id="offerCarousel" class="mt-4 w-full flex-col items-center hidden">
+                    <div class="flex items-center justify-center w-full">
+                        <button id="offerPrevImageBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors mr-4">&lt;</button>
+                        <img id="offerImage" src="" alt="Offer Image" class="rounded-lg shadow-md w-full h-auto max-w-md transition-opacity duration-300">
+                        <button id="offerNextImageBtn" class="text-3xl p-2 rounded-full bg-slate-200 hover:bg-slate-300 transition-colors ml-4">&gt;</button>
+                    </div>
+                </div>
+                <div class="flex space-x-4 justify-center mt-6">
+                    <button class="back-btn bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full">Back</button>
+                    <button id="offersNextBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-full shadow-lg hidden">View Summary</button>
+                </div>
+            </div>
+
+            <div id="summaryPage" class="section text-center">
+                <h2 class="text-3xl font-semibold text-slate-700 mb-4">Summary</h2>
+                <div id="summaryContent" class="text-left bg-slate-50 p-6 rounded-lg space-y-2 text-lg"></div>
+                <div class="flex space-x-4 justify-center mt-6">
+                    <button class="back-btn bg-slate-400 hover:bg-slate-500 text-white font-medium py-3 px-8 rounded-full">Back</button>
+                    <button id="copySummaryBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-full">Copy to Clipboard</button>
+                    <button id="restartBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-8 rounded-full">Start Over</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="messageBox" class="message-box hidden">
-        Please select "PureFiber" first.
-    </div>
+    <div id="messageBox" class="message-box"></div>
 
     <script>
-        // Get all elements by their IDs
-        const mainPageContent = document.getElementById('mainPageContent');
-        const ontarioBtn = document.getElementById('ontarioBtn');
-        const quebecBtn = document.getElementById('quebecBtn');
-        
-        // New security quotes page elements
-        const securityQuotesSection = document.getElementById('securityQuotesSection');
-        const securityNextBtn = document.getElementById('securityNextBtn2');
-        const securityBackBtn = document.getElementById('securityBackBtn');
-        const securityPrevBtn = document.getElementById('securityPrevBtn');
-        const securityNextBtn1 = document.getElementById('securityNextBtn');
-        const securityQuoteText = document.getElementById('securityQuoteText');
-        // Intermediate page elements
-        const intermediateOptionSection = document.getElementById('intermediateOptionSection');
-        const intermediateOptionCheckbox = document.getElementById('intermediateOptionCheckbox');
-        const casaImageContainer = document.getElementById('casaImageContainer');
-        const thumbsContainer = document.getElementById('thumbsContainer');
-        const thumbsUpContainer = document.getElementById('thumbsUpContainer');
-        const thumbsUpContainer2 = document.getElementById('thumbsUpContainer2');
-        const thumbsUpCheckbox = document.getElementById('thumbsUpCheckbox');
-        const thumbsUpCheckbox2 = document.getElementById('thumbsUpCheckbox2');
-        const quebecNonIlecContainer = document.getElementById('quebecNonIlecContainer');
-        const quebecNonIlecCheckbox = document.getElementById('quebecNonIlecCheckbox');
-        const nextBtn = document.getElementById('nextBtn');
-        const intermediateBackBtn = document.getElementById('intermediateBackBtn');
-        let selectedProvince = '';
-
-        // Final options pages
-        const ontarioSection = document.getElementById('ontarioSection');
-        const quebecSection = document.getElementById('quebecSection');
-        const ontarioOption1 = document.getElementById('ontarioOption1');
-        const ontarioOption2 = document.getElementById('ontarioOption2');
-        const quebecOption1 = document.getElementById('quebecOption1');
-        const quebecOption2 = document.getElementById('quebecOption2');
-        const ontarioBackBtn = document.getElementById('ontarioBackBtn');
-        const quebecBackBtn = document.getElementById('quebecBackBtn');
-        
-        // Carousel-specific elements
-        const ontarioCarousel = document.getElementById('ontarioCarousel');
-        const ontarioImage = document.getElementById('ontarioImage');
-        const ontarioPrevBtn = document.getElementById('ontarioPrev');
-        const ontarioNextBtn = document.getElementById('ontarioNext');
-        const ontarioDoneBtn = document.getElementById('ontarioDoneBtn');
-
-        const quebecCarousel = document.getElementById('quebecCarousel');
-        const quebecImage = document.getElementById('quebecImage');
-        const quebecPrevBtn = document.getElementById('quebecPrev');
-        const quebecNextBtn = document.getElementById('quebecNext');
-        const quebecDoneBtn = document.getElementById('quebecDoneBtn');
-
-        const messageBox = document.getElementById('messageBox');
-        // Quote display logic for main page (restored and made sequential)
-        const quotes = [
-            "1GB connection with unlimited data",
-            "Wall to wall WiFi connection (When subscribed to WiFi Plus)",
-            "High Speed connection",
-            "Whole home wifi coverage (When subscribed to WiFi Plus)",
-            "Troubleshooting is easier when you can see the health of the internet including WiFi",
-            "Have all your services with one provider for a best end to end service",
-            "Stay connected on all your devices, wherever you are in your home.",
-            "Unlock the full potential of your smart home with one robust solution",
-            "Get the speed you pay for, with no hidden fees or surprise throttling.",
-            "A full view of all your services in one place gives us the insight to provide a better, more proactive experience."
-        ];
-        let currentQuoteIndex = 0;
-        const quoteText = document.getElementById('quoteText');
-        let quoteInterval;
-        function showNextQuote() {
-            quoteText.style.opacity = 0;
-            setTimeout(() => {
-                quoteText.textContent = quotes[currentQuoteIndex];
-                quoteText.style.opacity = 1;
-                currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
-            }, 1000);
-        }
-
-        function stopQuotes() {
-            clearInterval(quoteInterval);
-            quoteText.textContent = "";
-            quoteText.style.opacity = 0;
-        }
-
-        function startQuotes() {
-            showNextQuote();
-            quoteInterval = setInterval(showNextQuote, 5000);
-        }
-
-        // Quote display logic for security quotes page
-        const securityQuotes = [
-            "Wall to Wall connection (When subscribed to wifi plus)",
-            "Smart security cameras rely on a stable connection to work properly.",
-            "With our fiber internet, you won't have to worry about frustrating dropped connections.",
-            "Your cameras can upload footage in real time, so you always have eyes on your home.",
-            "Your whole family can be on their devices at once with no slowdowns.",
-            "You can stream 4K movies and shows instantly on your TV.",
-            "You'll never have to deal with buffering or long loading times again.",
-            "Dead zones and disconnected devices are frustrating. Our solution ensures a strong, consistent coverage, so you can get a good connection from anywhere in your home, without the hassle.",
-            "Answer your smart doorbell from anywhere instantly with a clear voice and video.",
-            "A strong connection allows for seamless two-way communication.",
-            "Our fiber provides the bandwidth you need for all your smart devices.",
-            "Your outdoor camera is a key part of your home security. Fiber internet gives it the strong, stable connection it needs to upload a clear video of the yard or driveway right away. If something happens, you'll get your footage ready faster than before.",
-            "This makes your entire smart home work smoothly and reliably.",
-            "Your devices will stay connected no matter where you are in the house.",
-            "Every corner of your home will have a fast, stable connection.",
-            "A standard internet connection can get overwhelmed when multiple devices—like security system, and a streaming TV—are all active. Fiber delivers a consistently strong signal to every single one of them, ensuring everything works perfectly at the same time.",
-            "Get the full benefit of your internet speed, everywhere in your home.",
-            "Our Wi-Fi provides a strong, consistent signal in every room.",
-            "Smart devices like cameras rely on a stable connection to work properly. With our fiber internet, you won't have to worry about frustrating dropped connections that could leave your home vulnerable or your smart systems unresponsive.",
-            "Get the full benefit of your internet speed, everywhere in your home.",
-            "Smart security cameras need a strong, stable connection to protect your home."
-        ];
-        let currentSecurityQuoteIndex = 0;
-        
-        function updateSecurityQuote() {
-            securityQuoteText.textContent = securityQuotes[currentSecurityQuoteIndex];
-        }
-
-        // Initialize with the first quote on both pages
         document.addEventListener('DOMContentLoaded', () => {
-            startQuotes();
-            updateSecurityQuote();
-        });
-
-        // Event listeners for security quote navigation
-        securityNextBtn1.addEventListener('click', () => {
-            currentSecurityQuoteIndex = (currentSecurityQuoteIndex + 1) % securityQuotes.length;
-            updateSecurityQuote();
-        });
-
-        securityPrevBtn.addEventListener('click', () => {
-            currentSecurityQuoteIndex = (currentSecurityQuoteIndex - 1 + securityQuotes.length) % securityQuotes.length;
-            updateSecurityQuote();
-        });
-        // Image arrays for the carousel
-        const ontarioImagesOption1 = [
-            'https://github.com/modexperimental/Pfe/blob/main/1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/2.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/3.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/4.jpg?raw=true'
-        ];
-        const ontarioImagesOption1and2 = [
-            'https://github.com/modexperimental/Pfe/blob/main/1-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/2-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/3-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/4-1.jpg?raw=true'
-        ];
-        const quebecImagesOption1 = [
-            'https://github.com/modexperimental/Pfe/blob/main/1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/2.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/3.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/4.jpg?raw=true'
-        ];
-        const quebecImagesOption1and2 = [
-            'https://github.com/modexperimental/Pfe/blob/main/1-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/2-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/3-1.jpg?raw=true',
-            'https://github.com/modexperimental/Pfe/blob/main/4-1.jpg?raw=true'
-        ];
-        let currentOntarioImages = [];
-        let currentQuebecImages = [];
-        let ontarioImageIndex = 0;
-        let quebecImageIndex = 0;
-        // Function to display the pop-up message
-        function showMessageBox(message) {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden');
-            setTimeout(() => {
-                messageBox.style.opacity = 1;
-            }, 10);
-            setTimeout(() => {
-                messageBox.style.opacity = 0;
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 500);
-            }, 1500);
-        }
-
-        // Function to handle image and done button visibility
-        function updateImagesAndDoneButton() {
-            if (selectedProvince === 'ontario') {
-                if (ontarioImageIndex === 3) {
-                    ontarioDoneBtn.classList.remove('hidden');
-                } else {
-                    ontarioDoneBtn.classList.add('hidden');
-                }
-            } else if (selectedProvince === 'quebec') {
-                if (quebecImageIndex === 3) {
-                    quebecDoneBtn.classList.remove('hidden');
-                } else {
-                    quebecDoneBtn.classList.add('hidden');
-                }
-            }
-        }
-
-        // Function to handle Ontario checkbox logic
-        function handleOntarioCheckboxes() {
-            ontarioDoneBtn.classList.add('hidden');
-            ontarioImageIndex = 0;
-            if (ontarioOption1.checked && ontarioOption2.checked) {
-                currentOntarioImages = ontarioImagesOption1and2;
-                ontarioImage.src = currentOntarioImages[ontarioImageIndex];
-                ontarioCarousel.classList.remove('hidden');
-            } else if (ontarioOption1.checked) {
-                currentOntarioImages = ontarioImagesOption1;
-                ontarioImage.src = currentOntarioImages[ontarioImageIndex];
-                ontarioCarousel.classList.remove('hidden');
-            } else {
-                ontarioCarousel.classList.add('hidden');
-            }
-        }
-
-        // Function to handle Quebec checkbox logic
-        function handleQuebecCheckboxes() {
-            quebecDoneBtn.classList.add('hidden');
-            quebecImageIndex = 0;
-            if (quebecOption1.checked && quebecOption2.checked) {
-                currentQuebecImages = quebecImagesOption1and2;
-                quebecImage.src = currentQuebecImages[quebecImageIndex];
-                quebecCarousel.classList.remove('hidden');
-            } else if (quebecOption1.checked) {
-                currentQuebecImages = quebecImagesOption1;
-                quebecImage.src = currentQuebecImages[quebecImageIndex];
-                quebecCarousel.classList.remove('hidden');
-            } else {
-                quebecCarousel.classList.add('hidden');
-            }
-        }
-
-        // Event listener for Ontario button
-        ontarioBtn.addEventListener('click', () => {
-            mainPageContent.style.display = 'none';
-            intermediateOptionSection.style.display = 'block';
-            selectedProvince = 'ontario';
-            quebecNonIlecContainer.classList.add('hidden');
-            stopQuotes();
-        });
-
-        // Event listener for Quebec button
-        quebecBtn.addEventListener('click', () => {
-            mainPageContent.style.display = 'none';
-            intermediateOptionSection.style.display = 'block';
-            selectedProvince = 'quebec';
-            quebecNonIlecContainer.classList.remove('hidden');
-            stopQuotes();
-        });
-        // Event listener for the "Next" button on the intermediate page
-        nextBtn.addEventListener('click', () => {
-            if (!intermediateOptionCheckbox.checked) {
-                showMessageBox("Please check 'Offer is available on casa' to proceed.");
-                return;
-            }
-            if (!thumbsUpCheckbox2.checked) {
-                showMessageBox("Please select the primary thumbs up to proceed.");
-                return;
-            }
-            if (selectedProvince === 'quebec' && !quebecNonIlecCheckbox.checked) {
-                showMessageBox("Please check 'Non-Ilec Customer' to proceed.");
-                return;
-            }
-            intermediateOptionSection.style.display = 'none';
-            securityQuotesSection.style.display = 'block';
-            currentSecurityQuoteIndex = 0;
-            updateSecurityQuote();
             
-        });
+            const config = {
+                quotes: {
+                    main: ["1GB connection with unlimited data", "Wall to wall WiFi connection (When subscribed to WiFi Plus)", "High Speed connection", "Whole home wifi coverage (When subscribed to WiFi Plus)", "Troubleshooting is easier when you can see the health of the internet including WiFi", "Have all your services with one provider for a best end to end service", "Stay connected on all your devices, wherever you are in your home.", "Unlock the full potential of your smart home with one robust solution", "Get the speed you pay for, with no hidden fees or surprise throttling.", "A full view of all your services in one place gives us the insight to provide a better, more proactive experience."],
+                    benefits: ["Wall to Wall connection (When subscribed to wifi plus)", "Smart security cameras rely on a stable connection to work properly.", "With our fiber internet, you won't have to worry about frustrating dropped connections.", "Your cameras can upload footage in real time, so you always have eyes on your home.", "Your whole family can be on their devices at once with no slowdowns.", "You can stream 4K movies and shows instantly on your TV.", "You'll never have to deal with buffering or long loading times again.", "Dead zones and disconnected devices are frustrating. Our solution ensures a strong, consistent coverage, so you can get a good connection from anywhere in your home, without the hassle.", "Answer your smart doorbell from anywhere instantly with a clear voice and video.", "A strong connection allows for seamless two-way communication.", "Our fiber provides the bandwidth you need for all your smart devices.", "Your outdoor camera is a key part of your home security. Fiber internet gives it the strong, stable connection it needs to upload a clear video of the yard or driveway right away. If something happens, you'll get your footage ready faster than before.", "This makes your entire smart home work smoothly and reliably.", "Your devices will stay connected no matter where you are in the house.", "Every corner of your home will have a fast, stable connection.", "A standard internet connection can get overwhelmed when multiple devices—like security system, and a streaming TV—are all active. Fiber delivers a consistently strong signal to every single one of them, ensuring everything works perfectly at the same time.", "Get the full benefit of your internet speed, everywhere in your home.", "Our Wi-Fi provides a strong, consistent signal in every room.", "Smart devices like cameras rely on a stable connection to work properly. With our fiber internet, you won't have to worry about frustrating dropped connections that could leave your home vulnerable or your smart systems unresponsive.", "Get the full benefit of your internet speed, everywhere in your home.", "Smart security cameras need a strong, stable connection to protect your home."]
+                },
+                images: {
+                    pureFiber: ['https://github.com/modexperimental/Pfe/blob/main/1.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/2.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/3.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/4.jpg?raw=true'],
+                    wifiPlus: ['https://github.com/modexperimental/Pfe/blob/main/1-1.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/2-1.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/3-1.jpg?raw=true', 'https://github.com/modexperimental/Pfe/blob/main/4-1.jpg?raw=true']
+                },
+                thumbnails: [
+                    { id: 'thumbsUpContainer', iconId: 'thumbIcon1', top: '84%', left: '55.3%', size: '1.35rem', icon: '👍' },
+                    { id: 'thumbsUpContainer2', iconId: 'thumbIcon2', top: '88.7%', left: '55.3%', size: '1.35rem', icon: '👍' }
+                ]
+            };
 
-        // Event listener for the "Back" button on the intermediate page
-        intermediateBackBtn.addEventListener('click', () => {
-            intermediateOptionSection.style.display = 'none';
-            mainPageContent.style.display = 'block';
-            intermediateOptionCheckbox.checked = false;
-            quebecNonIlecCheckbox.checked = false;
-            casaImageContainer.classList.add('hidden');
-            thumbsContainer.classList.add('hidden');
-            thumbsUpCheckbox.checked = false;
-            thumbsUpCheckbox2.checked = false;
-            thumbsUpContainer.querySelector('span').classList.remove('is-checked');
-            thumbsUpContainer2.querySelector('span').classList.remove('is-checked');
-            startQuotes();
-        });
-        // Event listener for the "Next" button on the security quotes page
-        securityNextBtn.addEventListener('click', () => {
-            securityQuotesSection.style.display = 'none';
-            if (selectedProvince === 'ontario') {
-                ontarioSection.style.display = 'block';
-                // Initialize with PureFiber images by default
-                currentOntarioImages = ontarioImagesOption1;
-                ontarioImage.src = currentOntarioImages[0];
-            } else if (selectedProvince === 'quebec') {
-                quebecSection.style.display = 'block';
-                // Initialize with PureFiber images by default
-                currentQuebecImages = quebecImagesOption1;
-                quebecImage.src = currentQuebecImages[0];
-            }
-        });
-        // Event listener for the "Back" button on the security quotes page
-        securityBackBtn.addEventListener('click', () => {
-            securityQuotesSection.style.display = 'none';
-            intermediateOptionSection.style.display = 'block';
-        });
-        // Event listener for the intermediate checkbox to show/hide the image and thumbs options
-        intermediateOptionCheckbox.addEventListener('change', () => {
-            if (intermediateOptionCheckbox.checked) {
-                casaImageContainer.classList.remove('hidden');
-                thumbsContainer.classList.remove('hidden');
-            } else {
-                
-                casaImageContainer.classList.add('hidden');
-                thumbsContainer.classList.add('hidden');
-                thumbsUpCheckbox.checked = false;
-                thumbsUpCheckbox2.checked = false;
-                thumbsUpContainer.querySelector('span').classList.remove('is-checked');
-                thumbsUpContainer2.querySelector('span').classList.remove('is-checked');
-            }
-        });
+            const state = { currentPage: 'mainPage', province: null, isNonIlec: false, isCasaAvailable: false, offers: { pureFiber: false, wifiPlus: false }, quoteInterval: null, currentBenefitQuoteIndex: 0, currentOfferImageIndex: 0 };
 
-        // Event listener to toggle thumbs up
-        thumbsUpCheckbox.addEventListener('change', () => {
-            if (thumbsUpCheckbox.checked) {
-                thumbsUpContainer.querySelector('span').classList.add('is-checked');
-            } else {
-                thumbsUpContainer.querySelector('span').classList.remove('is-checked');
-            }
-        });
+            const sections = document.querySelectorAll('.section');
+            const messageBox = document.getElementById('messageBox');
+            const quoteText = document.getElementById('quoteText');
+            const securityQuoteText = document.getElementById('securityQuoteText');
+            const casaImageContainer = document.getElementById('casaImageContainer');
+            const quebecNonIlecContainer = document.getElementById('quebecNonIlecContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressBarFill = document.getElementById('progressBarFill');
+            const progressSteps = document.getElementById('progressSteps').children;
 
-        thumbsUpCheckbox2.addEventListener('change', () => {
-            if (thumbsUpCheckbox2.checked) {
-                thumbsUpContainer2.querySelector('span').classList.add('is-checked');
-            } else {
-                thumbsUpContainer2.querySelector('span').classList.remove('is-checked');
-            }
-        });
-        // Event listener for the "Back" button on the Ontario page
-        ontarioBackBtn.addEventListener('click', () => {
-            ontarioSection.style.display = 'none';
-            securityQuotesSection.style.display = 'block';
-            ontarioOption1.checked = false;
-            ontarioOption2.checked = false;
-            ontarioCarousel.classList.add('hidden');
-            ontarioDoneBtn.classList.add('hidden');
-        });
-        // Event listener for the "Back" button on the Quebec page
-        quebecBackBtn.addEventListener('click', () => {
-            quebecSection.style.display = 'none';
-            securityQuotesSection.style.display = 'block';
-            quebecOption1.checked = false;
-            quebecOption2.checked = false;
-            quebecCarousel.classList.add('hidden');
-            quebecDoneBtn.classList.add('hidden');
-        });
-        // Event listener for Ontario PureFiber
-        ontarioOption1.addEventListener('change', () => {
-            handleOntarioCheckboxes();
-        });
-        // Event listener for Ontario Wifi+
-        ontarioOption2.addEventListener('change', () => {
-            if (ontarioOption2.checked && !ontarioOption1.checked) {
-                ontarioOption2.checked = false;
-                showMessageBox("Please select 'PureFiber' first.");
-            }
-            handleOntarioCheckboxes();
-        });
-        
-        // Event listener for Quebec PureFiber
-        quebecOption1.addEventListener('change', () => {
-            handleQuebecCheckboxes();
-        });
-        // Event listener for Quebec Wifi+
-        quebecOption2.addEventListener('change', () => {
-            if (quebecOption2.checked && !quebecOption1.checked) {
-                quebecOption2.checked = false;
-                showMessageBox("Please select 'PureFiber' first.");
-            }
-            handleQuebecCheckboxes();
-        });
-        
-        // Ontario carousel navigation
-        ontarioNextBtn.addEventListener('click', () => {
-            ontarioImageIndex = (ontarioImageIndex + 1) % currentOntarioImages.length;
-            ontarioImage.src = currentOntarioImages[ontarioImageIndex];
-            updateImagesAndDoneButton();
-        });
-        // Quebec carousel navigation
-        quebecNextBtn.addEventListener('click', () => {
-            quebecImageIndex = (quebecImageIndex + 1) % currentQuebecImages.length;
-            quebecImage.src = currentQuebecImages[quebecImageIndex];
-            updateImagesAndDoneButton();
-        });
-        // Done button event listeners
-        function handleDone() {
-            // Hide the current section
-            if (selectedProvince === 'ontario') {
-                ontarioSection.style.display = 'none';
-            } else if (selectedProvince === 'quebec') {
-                quebecSection.style.display = 'none';
-            }
+            const initializeThumbnails = () => {
+                config.thumbnails.forEach(thumb => {
+                    const container = document.getElementById(thumb.id);
+                    const iconSpan = document.getElementById(thumb.iconId);
+                    if (container && iconSpan) {
+                        container.style.top = thumb.top;
+                        container.style.left = thumb.left;
+                        container.style.fontSize = thumb.size;
+                        iconSpan.textContent = thumb.icon;
+                    }
+                });
+            };
 
-            // Show the main page
-            mainPageContent.style.display = 'block';
-            intermediateOptionCheckbox.checked = false;
-            ontarioOption1.checked = false;
-            ontarioOption2.checked = false;
-            quebecOption1.checked = false;
-            quebecOption2.checked = false;
-            quebecNonIlecCheckbox.checked = false;
-            ontarioCarousel.classList.add('hidden');
-            quebecCarousel.classList.add('hidden');
-            casaImageContainer.classList.add('hidden');
-            thumbsContainer.classList.add('hidden');
-            thumbsUpCheckbox.checked = false;
-            thumbsUpCheckbox2.checked = false;
-            thumbsUpContainer.querySelector('span').classList.remove('is-checked');
-            thumbsUpContainer2.querySelector('span').classList.remove('is-checked');
-            startQuotes();
-        }
-        ontarioDoneBtn.addEventListener('click', handleDone);
-        quebecDoneBtn.addEventListener('click', handleDone);
-    </script>
-    <script>
-        // Disable the right-click context menu
-        document.addEventListener('contextmenu', event => event.preventDefault());
+            casaImageContainer.style.display = 'none';
 
-        // Disable common developer tool and view-source shortcuts
-        document.addEventListener('keydown', function (event) {
-            // F12, Ctrl+Shift+I, Ctrl+Shift+C (for Chrome/Edge)
-            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'C'))) {
-                event.preventDefault();
-            }
-            // Ctrl+U (for View Source)
-            if (event.ctrlKey && event.key === 'u') {
-                event.preventDefault();
-            }
+            const navigateTo = (pageId) => {
+                state.currentPage = pageId;
+                sections.forEach(section => section.classList.toggle('active', section.id === pageId));
+                updateProgressBar();
+            };
+
+            const showMessage = (message, duration = 2000) => {
+                messageBox.textContent = message;
+                messageBox.classList.add('show');
+                setTimeout(() => messageBox.classList.remove('show'), duration);
+            };
+
+            const resetState = () => {
+                state.province = null;
+                state.isNonIlec = false;
+                state.isCasaAvailable = false;
+                state.offers.pureFiber = false;
+                state.offers.wifiPlus = false;
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                document.querySelectorAll('.is-checked').forEach(el => el.classList.remove('is-checked'));
+                casaImageContainer.style.display = 'none';
+                document.getElementById('offerCarousel').classList.add('hidden');
+            };
+
+            const updateProgressBar = () => {
+                const pageOrder = ['mainPage', 'qualifyPage', 'benefitsPage', 'offersPage', 'summaryPage'];
+                const currentIndex = pageOrder.indexOf(state.currentPage);
+                if (currentIndex < 0 || state.currentPage === 'mainPage') {
+                    progressBar.classList.add('hidden');
+                    return;
+                }
+                progressBar.classList.remove('hidden');
+                const percent = (currentIndex / (pageOrder.length - 1)) * 100;
+                progressBarFill.style.width = `${percent}%`;
+                for (let i = 0; i < progressSteps.length; i++) {
+                    progressSteps[i].classList.toggle('completed', i <= currentIndex);
+                }
+            };
+            
+            const startMainQuotes = () => {
+                let index = 0;
+                const showNext = () => {
+                    quoteText.style.opacity = 0;
+                    setTimeout(() => {
+                        quoteText.textContent = config.quotes.main[index];
+                        quoteText.style.opacity = 1;
+                        index = (index + 1) % config.quotes.main.length;
+                    }, 1000);
+                };
+                showNext();
+                state.quoteInterval = setInterval(showNext, 5000);
+            };
+            const stopMainQuotes = () => clearInterval(state.quoteInterval);
+
+            const updateBenefitQuote = () => {
+                securityQuoteText.textContent = config.quotes.benefits[state.currentBenefitQuoteIndex];
+            };
+
+            // MODIFIED: This function now uses 'invisible' class to prevent layout shifts
+            const updateOfferCarousel = () => {
+                const pureFiber = document.getElementById('offerPureFiber').checked;
+                const wifiPlus = document.getElementById('offerWifiPlus').checked;
+                const carousel = document.getElementById('offerCarousel');
+                const nextBtn = document.getElementById('offersNextBtn');
+                const offerNextImageBtn = document.getElementById('offerNextImageBtn');
+                const offerPrevImageBtn = document.getElementById('offerPrevImageBtn');
+
+                state.offers.pureFiber = pureFiber;
+                state.offers.wifiPlus = wifiPlus;
+                let images = [];
+                if (wifiPlus) images = config.images.wifiPlus;
+                else if (pureFiber) images = config.images.pureFiber;
+
+                if (images.length > 0) {
+                    carousel.classList.remove('hidden');
+                    document.getElementById('offerImage').src = images[state.currentOfferImageIndex];
+                    nextBtn.classList.toggle('hidden', state.currentOfferImageIndex !== images.length - 1);
+                    
+                    // Use 'invisible' to hide buttons but keep their space
+                    offerNextImageBtn.classList.toggle('invisible', state.currentOfferImageIndex >= images.length - 1);
+                    offerPrevImageBtn.classList.toggle('invisible', state.currentOfferImageIndex <= 0);
+                } else {
+                    carousel.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                }
+            };
+            
+            const generateSummary = () => {
+                const content = `<p><strong>Province:</strong> ${state.province.charAt(0).toUpperCase() + state.province.slice(1)}</p>${state.province === 'quebec' ? `<p><strong>Customer Type:</strong> ${state.isNonIlec ? 'Non-Ilec' : 'Ilec'}</p>` : ''}<p><strong>Casa Offer Available:</strong> ${state.isCasaAvailable ? 'Yes' : 'No'}</p><p><strong>Selected Offers:</strong></p><ul class="list-disc list-inside ml-4">${state.offers.pureFiber ? '<li>PureFiber</li>' : ''}${state.offers.wifiPlus ? '<li>Wifi+</li>' : ''}${!state.offers.pureFiber && !state.offers.wifiPlus ? '<li>None</li>' : ''}</ul>`;
+                document.getElementById('summaryContent').innerHTML = content;
+            };
+
+            document.querySelectorAll('.province-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.province = btn.dataset.province;
+                    quebecNonIlecContainer.classList.toggle('hidden', state.province !== 'quebec');
+                    stopMainQuotes();
+                    navigateTo('qualifyPage');
+                });
+            });
+
+            document.getElementById('casaAvailableCheckbox').addEventListener('change', (e) => {
+                state.isCasaAvailable = e.target.checked;
+                if (e.target.checked) {
+                    casaImageContainer.style.display = 'flex';
+                } else {
+                    casaImageContainer.style.display = 'none';
+                }
+            });
+
+            document.querySelectorAll('#thumbsContainer input').forEach(thumb => {
+                thumb.addEventListener('change', (e) => {
+                    e.target.nextElementSibling.classList.toggle('is-checked', e.target.checked);
+                });
+            });
+
+            document.getElementById('qualifyNextBtn').addEventListener('click', () => {
+                if (state.province === 'quebec' && !document.getElementById('quebecNonIlecCheckbox').checked) return showMessage("For Quebec, please confirm 'Non-Ilec Customer' status.");
+                if (!state.isCasaAvailable) return showMessage("Please confirm the offer is available on casa.");
+                if (!document.getElementById('thumbsUpCheckbox').checked) return showMessage("Please click the primary thumbs-up icon to proceed.");
+                state.isNonIlec = document.getElementById('quebecNonIlecCheckbox').checked;
+                updateBenefitQuote();
+                navigateTo('benefitsPage');
+            });
+            
+            document.getElementById('securityPrevBtn').addEventListener('click', () => {
+                state.currentBenefitQuoteIndex = (state.currentBenefitQuoteIndex - 1 + config.quotes.benefits.length) % config.quotes.benefits.length;
+                updateBenefitQuote();
+            });
+            document.getElementById('securityNextBtn').addEventListener('click', () => {
+                state.currentBenefitQuoteIndex = (state.currentBenefitQuoteIndex + 1) % config.quotes.benefits.length;
+                updateBenefitQuote();
+            });
+            
+            document.getElementById('benefitsNextBtn').addEventListener('click', () => {
+                const title = document.getElementById('offersTitle');
+                title.textContent = state.province === 'quebec' ? 'Live Transfer to "Offnet Sales" on WWE then submit lead on FLP' : 'The Customer is Interested in:';
+                navigateTo('offersPage');
+            });
+
+            document.querySelectorAll('.offer-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (cb.id === 'offerWifiPlus' && cb.checked && !document.getElementById('offerPureFiber').checked) {
+                        cb.checked = false;
+                        return showMessage("Please select 'PureFiber' first.");
+                    }
+                    state.currentOfferImageIndex = 0;
+                    updateOfferCarousel();
+                });
+            });
+            
+            document.getElementById('offerNextImageBtn').addEventListener('click', () => {
+                state.currentOfferImageIndex++;
+                updateOfferCarousel();
+            });
+
+            document.getElementById('offerPrevImageBtn').addEventListener('click', () => {
+                state.currentOfferImageIndex--;
+                updateOfferCarousel();
+            });
+
+            document.getElementById('offersNextBtn').addEventListener('click', () => {
+                generateSummary();
+                navigateTo('summaryPage');
+            });
+
+            document.getElementById('copySummaryBtn').addEventListener('click', () => {
+                const textToCopy = document.getElementById('summaryContent').innerText;
+                navigator.clipboard.writeText(textToCopy).then(() => showMessage("Summary copied to clipboard!", 1500));
+            });
+            
+            document.getElementById('restartBtn').addEventListener('click', () => {
+                resetState();
+                startMainQuotes();
+                navigateTo('mainPage');
+            });
+
+            document.querySelectorAll('.back-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const pageMap = { qualifyPage: 'mainPage', benefitsPage: 'qualifyPage', offersPage: 'benefitsPage', summaryPage: 'offersPage' };
+                    if (state.currentPage === 'qualifyPage') startMainQuotes();
+                    navigateTo(pageMap[state.currentPage]);
+                });
+            });
+
+            initializeThumbnails();
+            startMainQuotes();
+            updateProgressBar();
         });
     </script>
 </body>
+
 </html>
-
-
